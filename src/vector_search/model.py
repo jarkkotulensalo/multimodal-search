@@ -13,16 +13,6 @@ def load_model(
     https://github.com/mlfoundations/open_clip
 
     """
-    # Load the BLIP-2 model and processor
-    # model = SentenceTransformer(text_encoder_name).to(device)
-    # model = AutoModel.from_pretrained(text_encoder_name,
-    #                                  trust_remote_code=True).to(device)
-    # Load the BLIP-2 model and processor
-    # local_model_path = "./models/blip2-opt-2.7b"
-    # model_path = "ViT-B/32"  # "Salesforce/blip2-opt-2.7b"
-    # Load BLIP-2 model and processor
-    # processor = AutoProcessor.from_pretrained(model_path)
-    # model = CLIPModel.from_pretrained(model_path)
 
     if model_name == "Salesforce/blip2-opt-2.7b":
         print(f"Loading model: {model_name}")
