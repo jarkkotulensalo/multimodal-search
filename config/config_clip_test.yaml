@@ -1,0 +1,9 @@
+model:
+  img_encoder: "clip-ViT-L-14" # "clip-vit-large-patch14-336"
+  text_encoder: "clip-ViT-L-14" # "clip-vit-large-patch14-336"
+  image_size: 336
+  batch_size: 64
+
+images:
+  name: "test"
+  path: "data"

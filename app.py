@@ -1,0 +1,77 @@
+import streamlit as st
+import numpy as np
+from omegaconf import OmegaConf
+import os
+import faiss
+from typing import Tuple
+
+from src.vector_search.embeddings import extract_text_features
+from src.vector_search.search import search_images_with_metadata
+from src.vector_search.model import load_model
+from src.vector_search.streamlit_utils import show_image_grid
+
+
+@st.cache_resource() # cache the model
+def load_cached_model(text_encoder_name):
+    model, processor, tokenizer = load_model(text_encoder_name)
+    return model, processor, tokenizer
+
+
+@st.cache_resource() # cache the model
+def load_cached_index(index_name):
+    index, metadata = load_index(index_name)
+    return index, metadata
+
+
+def load_index(index_name: str) -> Tuple[faiss.IndexFlatIP, np.ndarray]:
+    """
+    Load a FAISS index and metadata.
+    """
+    index = faiss.read_index(f'index/{index_name}.index')
+    metadata = np.load(f'index/{index_name}_metadata.npy', allow_pickle=True)
+    return index, metadata
+
+
+def select_config_file(config_base_path='config'):
+    # create a list of configs to choose from config folder
+    config_files = os.listdir(config_base_path)
+    config_files = [f for f in config_files if f.endswith('.yaml')]
+    # create a selectbox to choose the config file
+    config_file = st.sidebar.selectbox("Select a config file:", config_files)
+    return os.path.join(config_base_path, config_file)
+
+
+config_file = select_config_file()
+
+conf = OmegaConf.load(config_file)
+text_encoder_name = conf.model.text_encoder
+index_name = conf.images.name
+
+model, _, tokenizer = load_cached_model(text_encoder_name)
+
+index, metadata = load_cached_index(index_name)
+
+st.title("Image Search App from your local images")
+st.write("This app uses a CLIP model to search for images from your local image dataset.")
+
+query = st.text_input("Enter a search query: (e.g. 'black shirt')")
+top_k = st.slider("Number of results to show:", 1, 16, 8)
+
+if query:
+    # create a button to search
+    st.write("Searching for similar images...")
+    query_vector = extract_text_features(text=query, 
+                                         model=model, 
+                                         text_encoder=text_encoder_name, 
+                                         tokenizer=tokenizer)
+    
+    results, search_time = search_images_with_metadata(query_vector=query_vector, 
+                                          index=index, 
+                                          metadata=metadata, 
+                                          top_k=top_k)
+    st.write(f"Search time: {search_time:.6f} seconds")
+
+    # Display results in a grid layout
+    show_image_grid(results, top_k)
+else:
+    st.write("Please enter a query.")
