@@ -1,0 +1,5 @@
+[flake8]
+max-line-length = 88
+
+# disable E501: line too long
+ignore = E501, E741, W503, E203

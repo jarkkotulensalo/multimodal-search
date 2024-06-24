@@ -1,18 +1,20 @@
 import faiss
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Load the FAISS index and metadata
-index = faiss.read_index('index/image_features.index')
-metadata = np.load('index/image_metadata.npy', allow_pickle=True)
+index = faiss.read_index("index/image_features.index")
+metadata = np.load("index/image_metadata.npy", allow_pickle=True)
 
 # Extract feature vectors from the FAISS index
 features = index.reconstruct_n(0, index.ntotal)
+
 
 # Normalize the feature vectors
 def normalize_vector(vec):
     norm = np.linalg.norm(vec, axis=1, keepdims=True)
     return vec / norm
+
 
 features = normalize_vector(features)
 
@@ -25,9 +27,9 @@ similarities = dot_products[upper_triangle_indices]
 
 # Plot the distribution of dot products
 plt.hist(similarities, bins=50)
-plt.xlabel('Dot Product (Cosine Similarity)')
-plt.ylabel('Frequency')
-plt.title('Distribution of Dot Products between Image Pairs')
+plt.xlabel("Dot Product (Cosine Similarity)")
+plt.ylabel("Frequency")
+plt.title("Distribution of Dot Products between Image Pairs")
 plt.show()
 
 # Print some statistics

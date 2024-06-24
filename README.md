@@ -47,7 +47,7 @@ This project demonstrates an easy image search application using the CLIP, FAISS
       text_encoder: "clip-ViT-L-14"
       image_size: 336
       batch_size: 64
-    
+
     images:
       name: "my_images"
       path: "/path/to/your/images"

@@ -4,7 +4,7 @@ import streamlit as st
 def show_image_grid(results, top_k):
     """
     Display a grid of images and metadata in streamlit.
-    
+
     Args:
         results (List[Dict]): A list of dictionaries containing metadata for each image.
         top_k (int): The number of results to display.
@@ -24,9 +24,7 @@ def show_image_grid(results, top_k):
                     # st.write(f"Similarity: {res['similarity']:.2f}")
                     # st.write(f"Folder: {res['folder']}")
                     # st.write(f"Path: {res['path']}")
-                    if res['path'].lower().endswith(('.mp4', '.mov', '.avi')):
-                        st.video(res['path'])
+                    if res["path"].lower().endswith((".mp4", ".mov", ".avi")):
+                        st.video(res["path"])
                     else:
-                        st.image(res['path'], use_column_width=True)
-
-
+                        st.image(res["path"], use_column_width=True)
