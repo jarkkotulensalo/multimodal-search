@@ -5,6 +5,6 @@ opencv-python==4.10.0.84
 bitsandbytes==0.43.1
 safetensors==0.4.3
 sentence-transformers==3.0.1
-streamlit==1.35.0
+streamlit==1.36.0
 omegaconf==2.3.0
 matplotlib==3.9.0
