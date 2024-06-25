@@ -1,10 +1,10 @@
 # Image Search Application with CLIP, FAISS and Streamlit
 
-This project demonstrates an easy image search application using the CLIP, FAISS and Streamlit. The application allows users to search for relevant images from a local folder of imagess based on text queries.
+This project demonstrates an easy image search application using the CLIP, FAISS and Streamlit. The application allows users to search for relevant images from a local folder of images based on text queries.
 
 ## Features
 
-- **Text-to-image Search**: Uses image embeddings that allows contextual search from image by text prompts.
+- **Text-to-image Search**: Uses image embeddings that allows contextual search from images by text prompts.
 - **CLIP Model**: Utilizes CLIP for image and text embeddings. Use clip-ViT-L-14 for more accurate results.
 - **FAISS vector database** Uses FAISS for efficient in-memory vector search
 - **Streamlit Interface**: Provides a web interface for searching and viewing results.
@@ -21,7 +21,7 @@ This project demonstrates an easy image search application using the CLIP, FAISS
 
 1. **Clone the repository**:
     ```sh
-    git clone https://github.com/yourusername/multimodal-search.git
+    git clone https://github.com/jarkkotulensalo/multimodal-search.git
     cd multimodal-search
     ```
 
@@ -59,7 +59,7 @@ This project demonstrates an easy image search application using the CLIP, FAISS
 
 1. **Run the indexing script**:
     ```sh
-    python src/create_index.py
+    python src/vector_search/create_index.py
     ```
 
     This script processes the images and videos, extracts embeddings, and creates a FAISS index for efficient searching.
