@@ -64,6 +64,10 @@ def create_index(features: np.ndarray, metadata: np.ndarray, index_name: str):
     print(f"Creating index with embedding size of {features.shape[1]}...")
     index = faiss.IndexFlatIP(features.shape[1])
     index.add(features)
+    
+    # create index folder if it does not exist
+    if not os.path.exists("index"):
+        os.makedirs("index")
     faiss.write_index(index, f"index/{index_name}.index")
     np.save(f"index/{index_name}_metadata.npy", metadata)
 
@@ -144,5 +148,5 @@ def main(conf):
 
 if __name__ == "__main__":
 
-    conf = OmegaConf.load("config/config_clip_multilingual.yaml")
+    conf = OmegaConf.load("config/config_clip_test.yaml")
     main(conf)
