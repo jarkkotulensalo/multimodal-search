@@ -57,8 +57,8 @@ st.write(
     "This app uses a CLIP model to search for images from your local image dataset."
 )
 
-query = st.text_input("Enter a search query: (e.g. 'black shirt')")
-top_k = st.slider("Number of results to show:", 1, 16, 8)
+query = st.text_input("Enter a search query:")
+top_k = st.slider("Number of results to show:", 1, 20, 8)
 
 if query:
     # create a button to search
