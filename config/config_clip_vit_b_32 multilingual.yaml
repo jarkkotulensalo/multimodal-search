@@ -1,0 +1,9 @@
+model:
+  img_encoder: "clip-ViT-B-32"
+  text_encoder: "clip-ViT-B-32-multilingual-v1"
+  image_size: 224
+  batch_size: 64
+
+images:
+  name: "vit_b_32_multilingual"
+  path: "data"
