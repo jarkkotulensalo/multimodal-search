@@ -60,10 +60,7 @@ def preprocess_images(
 
 
 def extract_image_features(
-    images: List[PIL.Image.Image],
-    model: torch.nn.Module,
-    image_encoder: str,
-    processor: torch.nn.Module = None,
+    images: List[PIL.Image.Image], model: torch.nn.Module, image_encoder: str
 ):
     """
     Extracts image features from a list of images using a CLIP model.
@@ -88,23 +85,7 @@ def extract_image_features(
             img_emb = model.encode(images)
     elif image_encoder == "jinaai/jina-clip-v1":
         with torch.no_grad():
-            img_emb = model.encode_text(images)
-    elif image_encoder == "Florence-2-large":
-        # check that the processor is not None
-        if processor is None:
-            raise ValueError("Processor cannot be None for {image_encoder}")
-        inputs = processor(images=images, return_tensors="pt")
-        with torch.no_grad():
-            outputs = model(**inputs)
-        img_emb = outputs.last_hidden_state.cpu().numpy()
-    elif image_encoder == "Salesforce/blip2-opt-2.7b":
-        if processor is None:
-            raise ValueError("Processor cannot be None for {image_encoder}")
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        inputs = processor(images=images, return_tensors="pt").to(device, torch.float16)
-        with torch.no_grad():
-            outputs = model.get_image_features(**inputs, return_dict=True)
-        img_emb = outputs.pooler_output.cpu().numpy()
+            img_emb = model.encode_image(images)
     return img_emb
 
 
@@ -123,12 +104,7 @@ def extract_metadata_features(
     return metadata_features.cpu().numpy()
 
 
-def extract_text_features(
-    text: str,
-    model: torch.nn.Module,
-    text_encoder: str,
-    tokenizer: torch.nn.Module = None,
-):
+def extract_text_features(text: str, model: torch.nn.Module, text_encoder: str):
     """
     Extracts text features from a string using a CLIP model.
 
@@ -153,18 +129,4 @@ def extract_text_features(
     elif text_encoder == "jinaai/jina-clip-v1":
         with torch.no_grad():
             text_features = model.encode_text(text)
-    elif text_encoder == "Salesforce/blip2-opt-2.7b":
-
-        inputs = tokenizer([text], padding=True, return_tensors="pt")
-        with torch.no_grad():
-            outputs = model.get_text_features(
-                **inputs, output_hidden_states=True, return_dict=True
-            )
-        hidden_states = outputs.hidden_states[-1]
-        print(outputs.keys())
-        text_features = hidden_states.mean(dim=1).cpu().numpy()
-
-        print(text_features.shape)
-        # squeeze the first dim
-        text_features = text_features.squeeze(0)
     return text_features
