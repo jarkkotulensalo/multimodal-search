@@ -1,13 +1,9 @@
-from typing import Optional, Tuple
-
 import torch
 from sentence_transformers import SentenceTransformer
 from transformers import AutoModel
 
 
-def load_model(
-    model_name: str,
-) -> Tuple[torch.nn.Module, Optional[torch.nn.Module], Optional[torch.nn.Module]]:
+def load_model(model_name: str) -> torch.nn.Module:
     """
     Load the CLIP model and processor.
     https://github.com/mlfoundations/open_clip
