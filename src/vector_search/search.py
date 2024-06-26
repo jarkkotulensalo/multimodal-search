@@ -130,7 +130,5 @@ if __name__ == "__main__":
 
     # Example text query search with metadata filtering
     text = "people with sunglasses"
-    query_vector = extract_text_features(
-        text, model, text_encoder_name, tokenizer=tokenizer
-    )
+    query_vector = extract_text_features(text, model, text_encoder_name)
     search_and_display_images(query_vector, index, metadata)
