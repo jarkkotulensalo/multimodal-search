@@ -4,13 +4,26 @@ from typing import Dict, List
 
 import faiss
 import numpy as np
+import piexif
 import PIL
 import torch
 from omegaconf import OmegaConf
-from tqdm import tqdm
+from PIL import Image
 
-from src.vector_search.embeddings import extract_image_features, preprocess_images
 from src.vector_search.model import load_model
+
+
+def get_date_taken(image_path):
+    try:
+        exif_data = piexif.load(image_path)
+        date_taken = exif_data["Exif"][piexif.ExifIFD.DateTimeOriginal].decode("utf-8")
+        # replace ':' with '-' for compatibility with datetime for the date format
+        date, time = date_taken.split(" ")
+        date_taken = f"{date.replace(':', '-')} {time}"
+
+    except (KeyError, ValueError, piexif.InvalidImageDataError):
+        date_taken = "Unknown"
+    return date_taken
 
 
 # Get image paths and metadata
@@ -36,11 +49,12 @@ def get_image_paths_and_metadata(root_folder: str):
                     if imghdr.what(image_path) in ["png", ".jpg", "jpeg"]:
                         image_paths.append(image_path)
                         folder_name = os.path.basename(root)
+                        date_taken = get_date_taken(image_path)
                         metadata.append(
                             {
                                 "path": image_path,
                                 "folder": folder_name,
-                                "root_folder": root,
+                                "date_taken": date_taken,
                             }
                         )
                 except (PIL.UnidentifiedImageError, OSError) as e:
@@ -53,32 +67,62 @@ def get_image_paths_and_metadata(root_folder: str):
     return image_paths, metadata
 
 
-def create_index(features: np.ndarray, metadata: np.ndarray, index_name: str):
+def create_index(
+    img_embeddings: np.ndarray,
+    text_embeddings: np.ndarray,
+    metadata: np.ndarray,
+    index_name: str,
+):
     """
-    Create and save a FAISS index with the given features and metadata.
+    Create and save a FAISS index with the given image embeddings
+    create an index for text embeddings
+    save metadata.
     """
 
-    features = np.array(features, dtype=np.float32)
-    if not features.flags["C_CONTIGUOUS"]:
-        features = np.ascontiguousarray(features)
+    img_embeddings = np.array(img_embeddings, dtype=np.float32)
+    if not img_embeddings.flags["C_CONTIGUOUS"]:
+        img_embeddings = np.ascontiguousarray(img_embeddings)
 
-    print(f"Creating index with embedding size of {features.shape[1]}...")
-    index = faiss.IndexFlatIP(features.shape[1])
-    index.add(features)
-
-    # create index folder if it does not exist
+    print(f"Creating index with embedding size of {img_embeddings.shape[1]}...")
     if not os.path.exists("index"):
         os.makedirs("index")
+
+    index = faiss.IndexFlatIP(img_embeddings.shape[1])
+    index.add(img_embeddings)
     faiss.write_index(index, f"index/{index_name}.index")
+
+    index_text = faiss.IndexFlatIP(text_embeddings.shape[1])
+    index_text.add(text_embeddings)
+    faiss.write_index(index_text, f"index/{index_name}_text.index")
+
     np.save(f"index/{index_name}_metadata.npy", metadata)
+
+
+def preprocess_image(
+    image_path: List[str], image_size: int = 336
+) -> List[PIL.Image.Image]:
+    """
+    Preprocesses a batch of images by resizing them to the desired size.
+    """
+    image = Image.open(image_path).convert("RGB")
+    resized_image = image.resize((image_size, image_size))
+    return resized_image
+
+
+def preprocess_metadata(metadata: Dict):
+    metadata_str = (
+        f"inside folder {metadata['folder']}, photo taken in {metadata['date_taken']}"
+    )
+    return metadata_str
 
 
 def create_embeddings(
     image_paths: List[str],
-    metadata: List[Dict],
+    metadatas: List[Dict],
     model: torch.nn.Module,
+    text_processor: torch.nn.Module,
     image_encoder: str,
-    batch_size: int = 20,
+    batch_size: int = 64,
     image_size: int = 336,
 ):
     """
@@ -89,7 +133,7 @@ def create_embeddings(
         metadata (List[Dict]): A list of metadata for each image.
         model (torch.nn.Module): The CLIP model.
         image_encoder (str): The image encoder name.
-        processor (torch.nn.Module): The CLIP processor.
+        text_processor (torch.nn.Module): The CLIP processor.
         batch_size (int): The batch size for processing images.
         image_size (int): The image size for processing.
 
@@ -97,18 +141,24 @@ def create_embeddings(
         features (np.ndarray): An array of image features.
     """
 
-    features = []
-    for i in tqdm(range(0, len(image_paths), batch_size)):
-        batch_image_paths = image_paths[i : i + batch_size]
+    with torch.no_grad():
+        img_embs = model.encode(
+            [preprocess_image(image_path, image_size) for image_path in image_paths],
+            batch_size=batch_size,
+            convert_to_tensor=False,
+            show_progress_bar=True,
+        )
 
-        image_batch = preprocess_images(batch_image_paths, metadata, image_size)
-        batch_embeddings = extract_image_features(image_batch, model, image_encoder)
-        for path, emb in zip(batch_image_paths, batch_embeddings):
-            # metadata_embeddings = extract_text_embeddings(" ".join([meta['folder'], meta['date']]), model, processor)
-            features.append(emb.flatten())
+        text_embeddings = text_processor.encode(
+            [preprocess_metadata(metadata) for metadata in metadatas],
+            batch_size=batch_size,
+            convert_to_tensor=False,
+            show_progress_bar=True,
+        )
 
-    features = np.array(features)
-    return features
+    img_embs = np.array(img_embs)
+    text_embeddings = np.array(text_embeddings)
+    return img_embs, text_embeddings
 
 
 def create_vector_db(conf):
@@ -123,19 +173,27 @@ def create_vector_db(conf):
     image_size = conf.model.image_size
 
     model = load_model(image_encoder)
+    text_processor = load_model(conf.model.text_encoder)
 
-    image_paths, metadata = get_image_paths_and_metadata(images_path)
+    image_paths, metadatas = get_image_paths_and_metadata(images_path)
     print(f"Number of images: {len(image_paths)}")
 
     print("Extracting image features...")
-    features = create_embeddings(
-        image_paths, metadata, model, image_encoder, batch_size, image_size
+    img_embs, text_embs = create_embeddings(
+        image_paths=image_paths,
+        metadatas=metadatas,
+        model=model,
+        text_processor=text_processor,
+        image_encoder=image_encoder,
+        batch_size=batch_size,
+        image_size=image_size,
     )
-    print(f"The size of the features is: {features.shape}")
+    print(f"The size of the img_embs is: {img_embs.shape}")
+    print(f"The size of the text_embs is: {text_embs.shape}")
 
     # Create and save FAISS index
     print("Creating and saving FAISS index...")
-    create_index(features, metadata, index_name)
+    create_index(img_embs, text_embs, metadatas, index_name)
 
 
 if __name__ == "__main__":
