@@ -38,6 +38,8 @@ This project demonstrates an easy image search application using the CLIP, FAISS
 
 ## Configuration
 
+There are config templates ready for CLIP-ViT-L-14, CLIP-ViT-B-32, CLIP-ViT-B-32-multilingual and Jinaai/jina-clip-v1.
+
 1. **Set up the configuration file**:
 
     Create a `config.yaml` file in the `config` directory with the following content:
@@ -57,19 +59,19 @@ This project demonstrates an easy image search application using the CLIP, FAISS
 
 ## Usage
 
-1. **Run the indexing script**:
-    ```sh
-    python src/vector_search/create_index.py
-    ```
-
-    This script processes the images and videos, extracts embeddings, and creates a FAISS index for efficient searching.
-
-2. **Run the Streamlit application**:
+1. **Run the Streamlit application**:
     ```sh
     streamlit run src/app.py
     ```
 
     This will start a local web server and open the application in your default web browser.
+
+2. **Run the indexing script**:
+    Select a config file from the sidebar.
+
+    Press: "Create Index"
+
+    This button will run a script that processes the images and videos, extracts embeddings, and creates a FAISS index for efficient searching.
 
 
 ## License
