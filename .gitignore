@@ -4,3 +4,4 @@ data/*
 index/*
 
 *.pyc
+__pycache__/
