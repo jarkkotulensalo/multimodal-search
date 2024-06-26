@@ -6,11 +6,11 @@ import numpy as np
 import streamlit as st
 from omegaconf import OmegaConf
 
+from src.app.streamlit_utils import show_image_grid
 from src.vector_search.create_index import create_vector_db
 from src.vector_search.embeddings import extract_text_features
 from src.vector_search.model import load_model
 from src.vector_search.search import search_images_with_metadata
-from src.vector_search.streamlit_utils import show_image_grid
 
 
 @st.cache_resource()  # cache the model
@@ -52,6 +52,8 @@ def check_if_index_exists(index_name, conf):
     if not os.path.exists(f"index/{index_name}.index"):
         st.sidebar.button("Create Index", on_click=create_vector_db, args=(conf,))
         return False
+    else:
+        st.sidebar.button("Recreate Index", on_click=create_vector_db, args=(conf,))
     return True
 
 
