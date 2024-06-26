@@ -6,10 +6,11 @@ import faiss
 import numpy as np
 import PIL
 import torch
-from embeddings import extract_image_features, preprocess_images
-from model import load_model
 from omegaconf import OmegaConf
 from tqdm import tqdm
+
+from src.vector_search.embeddings import extract_image_features, preprocess_images
+from src.vector_search.model import load_model
 
 
 # Get image paths and metadata
@@ -64,6 +65,10 @@ def create_index(features: np.ndarray, metadata: np.ndarray, index_name: str):
     print(f"Creating index with embedding size of {features.shape[1]}...")
     index = faiss.IndexFlatIP(features.shape[1])
     index.add(features)
+
+    # create index folder if it does not exist
+    if not os.path.exists("index"):
+        os.makedirs("index")
     faiss.write_index(index, f"index/{index_name}.index")
     np.save(f"index/{index_name}_metadata.npy", metadata)
 
@@ -73,7 +78,6 @@ def create_embeddings(
     metadata: List[Dict],
     model: torch.nn.Module,
     image_encoder: str,
-    processor: torch.nn.Module,
     batch_size: int = 20,
     image_size: int = 336,
 ):
@@ -94,27 +98,20 @@ def create_embeddings(
     """
 
     features = []
-    # valid_paths = []
-    # valid_metadatas = []
     for i in tqdm(range(0, len(image_paths), batch_size)):
         batch_image_paths = image_paths[i : i + batch_size]
 
         image_batch = preprocess_images(batch_image_paths, metadata, image_size)
-        batch_embeddings = extract_image_features(
-            image_batch, model, image_encoder, processor
-        )
+        batch_embeddings = extract_image_features(image_batch, model, image_encoder)
         for path, emb in zip(batch_image_paths, batch_embeddings):
             # metadata_embeddings = extract_text_embeddings(" ".join([meta['folder'], meta['date']]), model, processor)
-            # hybrid_embeddings = np.concatenate((image_embeddings, metadata_embeddings), axis=None)
             features.append(emb.flatten())
-            # valid_paths.append(path)
-            # valid_metadatas.extend(metadata)
 
     features = np.array(features)
     return features
 
 
-def main(conf):
+def create_vector_db(conf):
     """
     Main function to create and save a FAISS index with image features.
     """
@@ -125,15 +122,14 @@ def main(conf):
     batch_size = conf.model.batch_size
     image_size = conf.model.image_size
 
-    model, processor, _ = load_model(image_encoder)
+    model = load_model(image_encoder)
 
     image_paths, metadata = get_image_paths_and_metadata(images_path)
     print(f"Number of images: {len(image_paths)}")
 
     print("Extracting image features...")
-    # features = np.array([extract_image_features(path, model, image_encoder, processor) for path in image_paths])
     features = create_embeddings(
-        image_paths, metadata, model, image_encoder, processor, batch_size, image_size
+        image_paths, metadata, model, image_encoder, batch_size, image_size
     )
     print(f"The size of the features is: {features.shape}")
 
@@ -144,5 +140,5 @@ def main(conf):
 
 if __name__ == "__main__":
 
-    conf = OmegaConf.load("config/config_clip_multilingual.yaml")
-    main(conf)
+    conf = OmegaConf.load("config/config_clip_test.yaml")
+    create_vector_db(conf)

@@ -65,10 +65,9 @@ def search_images_with_metadata(
     end_time = time.time()
     search_time = end_time - start_time
 
-    results = filter_images_by_distance(D, I, metadata, threshold=threshold)
+    # results = filter_images_by_distance(D, I, metadata, threshold=threshold)
 
-    # filter results where D is larger than threshold
-    # results = [metadata[i] for i in I[0]]
+    results = [metadata[i] for i in I[0]]
 
     return results, search_time
 

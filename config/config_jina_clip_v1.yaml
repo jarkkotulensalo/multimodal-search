@@ -1,0 +1,9 @@
+model:
+  img_encoder: "jinaai/jina-clip-v1"
+  text_encoder: "jinaai/jina-clip-v1"
+  image_size: 224
+  batch_size: 64
+
+images:
+  name: "jina_clip_v1"
+  path: "data"
