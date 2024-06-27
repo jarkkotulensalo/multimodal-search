@@ -10,7 +10,9 @@ from src.app.streamlit_utils import show_image_grid
 from src.vector_search.create_index import create_vector_db
 from src.vector_search.embeddings import extract_text_features
 from src.vector_search.model import load_model
-from src.vector_search.search import search_images_with_metadata
+
+# from src.vector_search.search import search_images_with_metadata
+from src.vespa.hybrid_search import search_image_closeness
 
 
 @st.cache_resource()  # cache the model
@@ -83,9 +85,14 @@ if query:
         text=query, model=model, text_encoder=text_encoder_name
     )
 
-    results, search_time = search_images_with_metadata(
-        query_vector=query_vector, index=index, metadata=metadata, top_k=top_k
+    # results, search_time = search_images_with_metadata(
+    #    query_vector=query_vector, index=index, metadata=metadata, top_k=top_k
+    # )
+
+    results, search_time = search_image_closeness(
+        query_vector=query_vector, top_k=top_k
     )
+
     st.write(f"Search time: {search_time:.6f} seconds")
 
     # Display results in a grid layout
