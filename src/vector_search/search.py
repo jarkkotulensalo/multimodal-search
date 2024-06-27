@@ -12,27 +12,6 @@ from src.vector_search.embeddings import extract_text_features
 from src.vector_search.model import load_model
 
 
-def filter_images_by_distance(
-    D: np.ndarray, I: np.ndarray, metadata: List[Dict], threshold: int = 20
-):
-    """
-    Filter images by distance and return metadata for images that meet the threshold.
-    """
-
-    filtered_results = []
-
-    for distance, idx in zip(D[0], I[0]):
-        similarity = (
-            distance  # Dot product already normalized to represent cosine similarity
-        )
-        if similarity >= threshold:
-            result = metadata[idx]
-            result["similarity"] = similarity  # Add similarity score to metadata
-            filtered_results.append(result)
-
-    return filtered_results
-
-
 def search_images_with_metadata(
     query_vector: np.ndarray,
     index: faiss.IndexFlatL2,
@@ -64,8 +43,6 @@ def search_images_with_metadata(
     D, I = index.search(np.array([query_vector]), top_k)
     end_time = time.time()
     search_time = end_time - start_time
-
-    # results = filter_images_by_distance(D, I, metadata, threshold=threshold)
 
     results = [metadata[i] for i in I[0]]
 
