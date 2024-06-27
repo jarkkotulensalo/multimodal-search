@@ -25,7 +25,8 @@ def show_image_grid(results, top_k):
                     # st.write(f"Folder: {res['folder']}")
                     # st.write(f"Path: {res['path']}")
                     # st.write(f"{res['date_taken']}")
-                    if res["path"].lower().endswith((".mp4", ".mov", ".avi")):
-                        st.video(res["path"])
+                    st.write(f"{res['metadata']}")
+                    if res["fpath"].lower().endswith((".mp4", ".mov", ".avi")):
+                        st.video(res["fpath"])
                     else:
-                        st.image(res["path"], use_column_width=True)
+                        st.image(res["fpath"], use_column_width=True)
