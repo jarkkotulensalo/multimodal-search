@@ -7,6 +7,7 @@ def load_model(model_name: str) -> torch.nn.Module:
     """
     Load the CLIP model and processor.
     https://github.com/mlfoundations/open_clip
+    SigLIP
 
     """
 
