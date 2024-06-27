@@ -9,6 +9,7 @@ from omegaconf import OmegaConf
 
 from src.vector_search.embeddings import create_embeddings
 from src.vector_search.model import load_model
+from src.vespa.index_documents import create_vespa_index
 
 
 def get_date_taken(image_path):
@@ -50,7 +51,7 @@ def get_image_paths_and_metadata(root_folder: str):
                         date_taken = get_date_taken(image_path)
                         metadata.append(
                             {
-                                "path": image_path,
+                                "fpath": image_path,
                                 "folder": folder_name,
                                 "date_taken": date_taken,
                             }
@@ -65,7 +66,7 @@ def get_image_paths_and_metadata(root_folder: str):
     return image_paths, metadata
 
 
-def create_index(
+def create_faiss_index(
     img_embeddings: np.ndarray,
     text_embeddings: np.ndarray,
     metadata: np.ndarray,
@@ -128,10 +129,13 @@ def create_vector_db(conf):
 
     # Create and save FAISS index
     print("Creating and saving FAISS index...")
-    create_index(img_embs, text_embs, metadatas, index_name)
+    create_faiss_index(img_embs, text_embs, metadatas, index_name)
+
+    print("Creating and saving Vespa index...")
+    create_vespa_index(img_embs, text_embs, metadatas)
 
 
 if __name__ == "__main__":
 
-    conf = OmegaConf.load("config/config_clip_test.yaml")
+    conf = OmegaConf.load("config/config_clip_vit_L_14.yaml")
     create_vector_db(conf)
