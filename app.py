@@ -7,7 +7,7 @@ import streamlit as st
 from omegaconf import OmegaConf
 
 from src.app.streamlit_utils import show_image_grid
-from src.vector_search.create_index import create_vector_db
+from src.create_index import create_vector_db
 from src.vector_search.embeddings import extract_text_features
 from src.vector_search.model import load_model
 
@@ -34,8 +34,8 @@ def load_index(index_name: str) -> Tuple[faiss.IndexFlatIP, np.ndarray]:
     """
     Load a FAISS index and metadata.
     """
-    index = faiss.read_index(f"index/{index_name}.index")
-    metadata = np.load(f"index/{index_name}_metadata.npy", allow_pickle=True)
+    index = faiss.read_index(f"index/{index_name}/faiss_img")
+    metadata = np.load(f"index/{index_name}/metadata.npy", allow_pickle=True)
     return index, metadata
 
 
@@ -51,11 +51,13 @@ def select_config_file(config_base_path="config"):
 def check_if_index_exists(index_name, conf):
     if not os.path.exists("index"):
         os.makedirs("index")
-    if not os.path.exists(f"index/{index_name}.index"):
-        st.sidebar.button("Create Index", on_click=create_vector_db, args=(conf,))
+    if not os.path.exists(f"index/{index_name}/faiss_img.index"):
+        st.sidebar.button("Create FAISS Index", on_click=create_vector_db, args=(conf,))
         return False
     else:
-        st.sidebar.button("Recreate Index", on_click=create_vector_db, args=(conf,))
+        st.sidebar.button(
+            "Recreate FAISS Index", on_click=create_vector_db, args=(conf,)
+        )
     return True
 
 

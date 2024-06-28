@@ -88,13 +88,13 @@ def create_faiss_index(
 
     index = faiss.IndexFlatIP(img_embeddings.shape[1])
     index.add(img_embeddings)
-    faiss.write_index(index, f"index/{index_name}.index")
+    faiss.write_index(index, f"index/{index_name}/faiss_img.index")
 
     index_text = faiss.IndexFlatIP(text_embeddings.shape[1])
     index_text.add(text_embeddings)
-    faiss.write_index(index_text, f"index/{index_name}_text.index")
+    faiss.write_index(index_text, f"index/{index_name}/faiss_text.index")
 
-    np.save(f"index/{index_name}_metadata.npy", metadata)
+    np.save(f"index/{index_name}/metadata.npy", metadata)
 
 
 def create_vector_db(conf):
@@ -107,6 +107,7 @@ def create_vector_db(conf):
     index_name = conf.images.name
     batch_size = conf.model.batch_size
     image_size = conf.model.image_size
+    vector_db = conf.vector_db.name
 
     model = load_model(image_encoder)
     text_processor = load_model(conf.model.text_encoder)
@@ -114,25 +115,41 @@ def create_vector_db(conf):
     image_paths, metadatas = get_image_paths_and_metadata(images_path)
     print(f"Number of images: {len(image_paths)}")
 
-    print("Extracting image features...")
-    img_embs, text_embs = create_embeddings(
-        image_paths=image_paths,
-        metadatas=metadatas,
-        model=model,
-        text_processor=text_processor,
-        image_encoder=image_encoder,
-        batch_size=batch_size,
-        image_size=image_size,
-    )
-    print(f"The size of the img_embs is: {img_embs.shape}")
-    print(f"The size of the text_embs is: {text_embs.shape}")
+    # check if the embeddings already exists
+    if os.path.exists(f"index/{index_name}/img_embs.npy"):
+        print(f"Embeddings already exist for {index_name}")
+        img_embs = np.load(f"index/{index_name}/img_embs.npy")
+        text_embs = np.load(f"index/{index_name}/text_embs.npy")
+        metadatas = np.load(f"index/{index_name}/metadata.npy", allow_pickle=True)
+    else:
+        print("Extracting image features...")
+        img_embs, text_embs = create_embeddings(
+            image_paths=image_paths,
+            metadatas=metadatas,
+            model=model,
+            text_processor=text_processor,
+            image_encoder=image_encoder,
+            batch_size=batch_size,
+            image_size=image_size,
+        )
+        print(f"The size of the img_embs is: {img_embs.shape}")
+        print(f"The size of the text_embs is: {text_embs.shape}")
+        # save the embeddings
+        if not os.path.exists("index"):
+            os.makedirs("index")
+        if not os.path.exists(f"index/{index_name}"):
+            os.makedirs(f"index/{index_name}")
+        np.save(f"index/{index_name}/img_embs.npy", img_embs)
+        np.save(f"index/{index_name}/text_embs.npy", text_embs)
+        np.save(f"index/{index_name}/metadata.npy", metadatas)
 
-    # Create and save FAISS index
-    print("Creating and saving FAISS index...")
-    create_faiss_index(img_embs, text_embs, metadatas, index_name)
-
-    print("Creating and saving Vespa index...")
-    create_vespa_index(img_embs, text_embs, metadatas)
+    if vector_db == "faiss":
+        # Create and save FAISS index
+        print("Creating and saving FAISS index...")
+        create_faiss_index(img_embs, text_embs, metadatas, index_name)
+    elif vector_db == "vespa":
+        print("Creating and saving Vespa index...")
+        create_vespa_index(img_embs, text_embs, metadatas)
 
 
 if __name__ == "__main__":
