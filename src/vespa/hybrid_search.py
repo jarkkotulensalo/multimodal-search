@@ -8,8 +8,8 @@ import requests
 def search_image_closeness(
     query_vector: np.array,
     top_k: int = 8,
-    start_date: str = None,
-    end_date: str = None,
+    start_date: int = None,
+    end_date: int = None,
     vespa_url="http://localhost:8080",
 ):
     """
@@ -18,6 +18,8 @@ def search_image_closeness(
     Args:
         query_embedding (np.array): The embedding of the query image.
         n_top_results (int): The number of top results to return.
+        start_date (int): The start date for filtering images by date.
+        end_date (int): The end date for filtering images by date.
         vespa_url (str): The URL of the Vespa instance.
 
     Returns:
@@ -30,16 +32,22 @@ def search_image_closeness(
     yql_query = (
         'select * from sources images where ([{"targetNumHits": '
         + str(top_k)
-        + "}]nearestNeighbor(image_embedding, q_text));"
+        + '}]nearestNeighbor(image_embedding, q_text)) or ([{"targetNumHits": '
+        + str(top_k)
+        + "}]nearestNeighbor(metadata_embedding, q_text));"
     )
-
+    print(start_date, end_date)
     if start_date or end_date:
-        filters = []
-        if start_date:
-            filters.append(f"date_taken >= {start_date}")
-        if end_date:
-            filters.append(f"date_taken <= {end_date}")
-        yql_query += " and " + " and ".join(filters)
+        yql_query = (
+            'select * from sources images where ([{"targetNumHits": '
+            + str(top_k)
+            + "}]nearestNeighbor(image_embedding, q_text)"
+            + f"and date_taken >= {str(start_date)} and date_taken<= {str(end_date)}"
+            + ') or ([{"targetNumHits": '
+            + str(top_k)
+            + "}]nearestNeighbor(metadata_embedding, q_text)"
+            + f"and date_taken >= {str(start_date)} and date_taken<= {str(end_date)});"
+        )
 
     query_payload = {
         "yql": yql_query,

@@ -6,12 +6,11 @@ import numpy as np
 import streamlit as st
 from omegaconf import OmegaConf
 
-from src.app.streamlit_utils import show_image_grid
+from src.app.streamlit_utils import convert_to_epoch, show_image_grid
 from src.create_index import create_vector_db
 from src.vector_search.embeddings import extract_text_features
 from src.vector_search.model import load_model
-
-# from src.vector_search.search import search_images_with_metadata
+from src.vector_search.search import search_images_with_metadata
 from src.vespa.hybrid_search import search_image_closeness
 
 
@@ -66,6 +65,7 @@ config_file = select_config_file()
 conf = OmegaConf.load(config_file)
 text_encoder_name = conf.model.text_encoder
 index_name = conf.images.name
+vector_db = conf.vector_db.name
 
 model = load_cached_model(text_encoder_name)
 
@@ -78,7 +78,16 @@ st.write(
 )
 
 query = st.text_input("Enter a search query:")
-top_k = st.slider("Number of results to show:", 1, 20, 8)
+top_k = st.sidebar.slider("Number of results to show:", 1, 20, 8)
+
+# add year and month filter
+year = st.sidebar.selectbox("Select Year", [None] + list(range(1995, 2024)))
+month = st.sidebar.selectbox("Select Month", [None] + list(range(1, 13)))
+
+start_date_epoch = None
+end_date_epoch = None
+if year:
+    start_date_epoch, end_date_epoch = convert_to_epoch(year, month)
 
 if query:
     # create a button to search
@@ -87,13 +96,17 @@ if query:
         text=query, model=model, text_encoder=text_encoder_name
     )
 
-    # results, search_time = search_images_with_metadata(
-    #    query_vector=query_vector, index=index, metadata=metadata, top_k=top_k
-    # )
-
-    results, search_time = search_image_closeness(
-        query_vector=query_vector, top_k=top_k
-    )
+    if vector_db == "faiss":
+        results, search_time = search_images_with_metadata(
+            query_vector=query_vector, index=index, metadata=metadata, top_k=top_k
+        )
+    elif vector_db == "vespa":
+        results, search_time = search_image_closeness(
+            query_vector=query_vector,
+            top_k=top_k,
+            start_date=start_date_epoch,
+            end_date=end_date_epoch,
+        )
 
     st.write(f"Search time: {search_time:.6f} seconds")
 
