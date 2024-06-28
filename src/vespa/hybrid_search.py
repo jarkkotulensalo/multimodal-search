@@ -6,7 +6,11 @@ import requests
 
 
 def search_image_closeness(
-    query_vector: np.array, top_k: int = 8, vespa_url="http://localhost:8080"
+    query_vector: np.array,
+    top_k: int = 8,
+    start_date: str = None,
+    end_date: str = None,
+    vespa_url="http://localhost:8080",
 ):
     """
     Search for images similar to a query image using the Vespa nearest neighbor search.
@@ -21,14 +25,27 @@ def search_image_closeness(
     """
 
     # Prepare the query JSON
+    # Construct the YQL query with optional date filters
+    # Add date filters if provided
+    yql_query = (
+        'select * from sources images where ([{"targetNumHits": '
+        + str(top_k)
+        + "}]nearestNeighbor(image_embedding, q_text));"
+    )
+
+    if start_date or end_date:
+        filters = []
+        if start_date:
+            filters.append(f"date_taken >= {start_date}")
+        if end_date:
+            filters.append(f"date_taken <= {end_date}")
+        yql_query += " and " + " and ".join(filters)
 
     query_payload = {
-        "yql": 'select * from sources images where ([{"targetNumHits": '
-        + str(top_k)
-        + "}]nearestNeighbor(image_embedding, q_image));",
+        "yql": yql_query,
         "ranking": "hybrid_rank",
         "hits": top_k,
-        "input": {"query(q_image)": query_vector.tolist()},
+        "input": {"query(q_text)": query_vector.tolist()},
     }
 
     # Send the query to Vespa
