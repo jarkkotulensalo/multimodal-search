@@ -83,7 +83,7 @@ st.write(
 )
 
 query = st.text_input("Enter a search query:")
-top_k = st.sidebar.slider("Number of results to show:", 1, 20, 8)
+top_k = st.sidebar.slider("Number of results to show:", 1, 20, 9)
 
 # add year and month filter
 year = st.sidebar.selectbox("Select Year", [None] + list(range(1995, 2024)))
