@@ -42,10 +42,14 @@ def get_image_paths_and_metadata(root_folder: str):
     metadata = []
     for root, _, files in os.walk(root_folder):
         for file in files:
-            if file.lower().endswith((".png", ".jpg", ".jpeg")):
+            if file.lower().endswith((".png", ".jpg", ".jpeg", ".mp4")):
                 image_path = os.path.join(root, file)
                 try:
-                    if imghdr.what(image_path) in ["png", ".jpg", "jpeg"]:
+                    if imghdr.what(image_path) in [
+                        "png",
+                        "jpg",
+                        "jpeg",
+                    ] or file.lower().endswith((".mp4")):
                         image_paths.append(image_path)
                         folder_name = os.path.basename(root)
                         date_taken = get_date_taken(image_path)
