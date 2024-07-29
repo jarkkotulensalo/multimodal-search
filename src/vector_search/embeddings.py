@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+import cv2
 import numpy as np
 import PIL
 import torch
@@ -9,13 +10,38 @@ from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
+def extract_first_frame(mp4_file_path):
+    """
+    Extracts the first frame of an MP4 video file.
+    Args:
+        mp4_file_path (str): The path to the MP4 video file.
+    Returns:
+        frame (np.ndarray): The first frame of the video.
+    """
+    # Open the video file
+    video_capture = cv2.VideoCapture(mp4_file_path)
+    # Read the first frame
+    success, frame = video_capture.read()
+    if not success:
+        raise ValueError("Failed to read the first frame of the video")
+    # Release the video capture object
+    video_capture.release()
+
+    return frame
+
+
 def preprocess_image(
     image_path: List[str], image_size: int = 336
 ) -> List[PIL.Image.Image]:
     """
     Preprocesses a batch of images by resizing them to the desired size.
+    Extracts the first frame of a video file if the file extension is .mp4.
     """
-    image = Image.open(image_path).convert("RGB")
+    if image_path.lower().endswith((".mp4")):
+        frame = extract_first_frame(image_path)
+        image = Image.fromarray(frame).convert("RGB")
+    else:
+        image = Image.open(image_path).convert("RGB")
     resized_image = image.resize((image_size, image_size))
     return resized_image
 
