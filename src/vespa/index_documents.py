@@ -5,9 +5,14 @@ import requests
 
 def convert_to_epoch(date_string):
     # Convert the date string to a datetime object
-    dt = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
-    # Convert the datetime object to epoch time (seconds since 1970-01-01)
-    epoch_time = int(dt.timestamp())
+    # print(f"date_string: {date_string}")
+    try:
+        dt = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
+        # Convert the datetime object to epoch time (seconds since 1970-01-01)
+        epoch_time = int(dt.timestamp())
+    except (ValueError, TypeError):
+        return None  # Return None for invalid dates
+
     return epoch_time
 
 
