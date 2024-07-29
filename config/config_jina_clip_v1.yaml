@@ -4,6 +4,9 @@ model:
   image_size: 224
   batch_size: 64
 
+vector_db:
+  name: "vespa"
+
 images:
   name: "jina_clip_v1"
   path: "data"

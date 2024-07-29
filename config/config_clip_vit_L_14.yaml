@@ -4,6 +4,9 @@ model:
   image_size: 336
   batch_size: 64
 
+vector_db:
+  name: "vespa"
+
 images:
-  name: "vit_l_14"
+  name: "vit_L_14"
   path: "data"
