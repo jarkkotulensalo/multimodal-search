@@ -23,10 +23,6 @@ def show_image_grid(results, top_k):
                 res = results[idx]
                 with cols[col_idx]:
                     # st.write(f"Result {idx + 1}")
-                    # st.write(f"Similarity: {res['similarity']:.2f}")
-                    # st.write(f"Folder: {res['folder']}")
-                    # st.write(f"Path: {res['path']}")
-                    # st.write(f"{res['date_taken']}")
                     # st.write(f"{res['metadata']}")
                     if res["fpath"].lower().endswith((".mp4", ".mov", ".avi")):
                         st.video(res["fpath"])
