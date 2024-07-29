@@ -51,7 +51,11 @@ def check_if_index_exists(index_name, conf):
     if not os.path.exists("index"):
         os.makedirs("index")
     if not os.path.exists(f"index/{index_name}/faiss_img.index"):
-        st.sidebar.button("Create FAISS Index", on_click=create_vector_db, args=(conf,))
+        st.sidebar.button(
+            f"Create index with {conf.vector_db.name}",
+            on_click=create_vector_db,
+            args=(conf,),
+        )
         return False
     else:
         st.sidebar.button(
@@ -72,9 +76,10 @@ model = load_cached_model(text_encoder_name)
 if check_if_index_exists(index_name, conf):
     index, metadata = load_cached_index(index_name)
 
-st.title("Image Search App from your local images")
+st.title("Text-to-image search using CLIP")
 st.write(
-    "This app uses a CLIP model to search for images from your local image dataset."
+    """Search for relevant images from your local image folder using any prompt.
+    """
 )
 
 query = st.text_input("Enter a search query:")
