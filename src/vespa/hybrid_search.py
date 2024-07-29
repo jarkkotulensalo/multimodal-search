@@ -36,7 +36,7 @@ def search_image_closeness(
         + str(top_k)
         + "}]nearestNeighbor(metadata_embedding, q_text));"
     )
-    print(start_date, end_date)
+    # print(start_date, end_date)
     if start_date or end_date:
         yql_query = (
             'select * from sources images where ([{"targetNumHits": '
