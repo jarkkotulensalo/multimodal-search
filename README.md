@@ -11,7 +11,7 @@ This project demonstrates an easy image search application using the CLIP, FAISS
 - **Streamlit Interface**: Provides a web interface for searching and viewing results.
 
 # Streamlit App
-![Example UI](resources/ui_demo.png)
+![Example UI](resources/app_screenshot.png)
 
 ## Prerequisites
 
