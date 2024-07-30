@@ -70,6 +70,7 @@ conf = OmegaConf.load(config_file)
 text_encoder_name = conf.model.text_encoder
 index_name = conf.images.name
 vector_db = conf.vector_db.name
+rank_profile = conf.vector_db.rank_profile
 
 model = load_cached_model(text_encoder_name)
 
@@ -109,6 +110,7 @@ if query:
         results, search_time = search_image_closeness(
             query_vector=query_vector,
             top_k=top_k,
+            rank_profile=rank_profile,
             start_date=start_date_epoch,
             end_date=end_date_epoch,
         )

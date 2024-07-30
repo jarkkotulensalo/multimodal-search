@@ -24,6 +24,34 @@ schema images {
         fields: metadata
     }
 
+    rank-profile image_rank inherits default {
+        num-threads-per-search: 8
+        inputs {
+            query(q_text)  tensor<float>(d[768])
+        }
+        function image_similarity() {
+            expression {
+                cosine_similarity(query(q_text), attribute(image_embedding), d)
+            }
+        }
+        first-phase {
+            expression: image_similarity()
+        }
+
+        second-phase {
+            expression: -attribute(date_taken)
+        }
+    }
+
+    rank-profile image_closeness inherits default {
+        inputs {
+        query(q_text) tensor<float>(d[768])
+        }
+        first-phase {
+            expression: closeness(image_embedding)
+        }
+    }
+
     rank-profile hybrid_rank inherits default {
         num-threads-per-search: 8
         inputs {
@@ -43,14 +71,9 @@ schema images {
         first-phase {
             expression: image_similarity() + text_similarity()
         }
-    }
 
-    rank-profile image_closeness inherits default {
-        inputs {
-        query(q_text) tensor<float>(d[768])
-        }
-        first-phase {
-            expression: closeness(image_embedding)
+        second-phase {
+            expression: -attribute(date_taken)
         }
     }
 }

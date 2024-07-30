@@ -5,9 +5,54 @@ import numpy as np
 import requests
 
 
+def hybrid_rank_query(top_k: int):
+    yql_query = (
+        'select * from sources images where ([{"targetNumHits": '
+        + str(top_k)
+        + '}]nearestNeighbor(image_embedding, q_text)) or ([{"targetNumHits": '
+        + str(top_k)
+        + "}]nearestNeighbor(metadata_embedding, q_text));"
+    )
+    return yql_query
+
+
+def image_rank_query(top_k: int):
+    yql_query = (
+        'select * from sources images where ([{"targetNumHits": '
+        + str(top_k)
+        + "}]nearestNeighbor(image_embedding, q_text));"
+    )
+    return yql_query
+
+
+def hybrid_time_filter_query(top_k: int, start_date: int, end_date: int):
+    yql_query = (
+        'select * from sources images where ([{"targetNumHits": '
+        + str(top_k)
+        + "}]nearestNeighbor(image_embedding, q_text)"
+        + f"and date_taken >= {str(start_date)} and date_taken<= {str(end_date)}"
+        + ') or ([{"targetNumHits": '
+        + str(top_k)
+        + "}]nearestNeighbor(metadata_embedding, q_text)"
+        + f"and date_taken >= {str(start_date)} and date_taken<= {str(end_date)});"
+    )
+    return yql_query
+
+
+def image_time_filter_query(top_k: int, start_date: int, end_date: int):
+    yql_query = (
+        'select * from sources images where ([{"targetNumHits": '
+        + str(top_k)
+        + "}]nearestNeighbor(image_embedding, q_text)"
+        + f"and date_taken >= {str(start_date)} and date_taken<= {str(end_date)});"
+    )
+    return yql_query
+
+
 def search_image_closeness(
     query_vector: np.array,
     top_k: int = 8,
+    rank_profile: str = "image_rank",
     start_date: int = None,
     end_date: int = None,
     vespa_url="http://localhost:8080",
@@ -26,32 +71,20 @@ def search_image_closeness(
         List[Dict]: A list of dictionaries containing metadata for each image.
     """
 
-    # Prepare the query JSON
     # Construct the YQL query with optional date filters
-    # Add date filters if provided
-    yql_query = (
-        'select * from sources images where ([{"targetNumHits": '
-        + str(top_k)
-        + '}]nearestNeighbor(image_embedding, q_text)) or ([{"targetNumHits": '
-        + str(top_k)
-        + "}]nearestNeighbor(metadata_embedding, q_text));"
-    )
-    # print(start_date, end_date)
-    if start_date or end_date:
-        yql_query = (
-            'select * from sources images where ([{"targetNumHits": '
-            + str(top_k)
-            + "}]nearestNeighbor(image_embedding, q_text)"
-            + f"and date_taken >= {str(start_date)} and date_taken<= {str(end_date)}"
-            + ') or ([{"targetNumHits": '
-            + str(top_k)
-            + "}]nearestNeighbor(metadata_embedding, q_text)"
-            + f"and date_taken >= {str(start_date)} and date_taken<= {str(end_date)});"
-        )
+    # Prepare the query JSON
+    if (start_date or end_date) and rank_profile == "hybrid_rank":
+        yql_query = hybrid_time_filter_query(top_k)
+    elif (start_date or end_date) and rank_profile == "image_rank":
+        yql_query = image_time_filter_query(top_k)
+    elif rank_profile == "hybrid_rank":
+        yql_query = hybrid_rank_query(top_k)
+    elif rank_profile == "image_rank":
+        yql_query = image_rank_query(top_k)
 
     query_payload = {
         "yql": yql_query,
-        "ranking": "hybrid_rank",
+        "ranking": rank_profile,
         "hits": top_k,
         "input": {"query(q_text)": query_vector.tolist()},
     }
