@@ -6,6 +6,7 @@ model:
 
 vector_db:
   name: "vespa"
+  rank_profile: "image_rank"  # or "hybrid_rank"
 
 images:
   name: "vit_L_14"
