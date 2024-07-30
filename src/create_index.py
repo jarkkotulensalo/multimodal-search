@@ -2,6 +2,7 @@ import imghdr
 import os
 
 import faiss
+import ffmpeg
 import numpy as np
 import piexif
 import PIL
@@ -12,7 +13,12 @@ from src.vector_search.model import load_model
 from src.vespa.index_documents import create_vespa_index
 
 
-def get_date_taken(image_path):
+def get_date_taken(image_path: str):
+    """
+    Fetch the date taken from the metadata of an image.
+    """
+    if image_path.lower().endswith((".mp4")):
+        return get_date_taken_mp4(image_path)
     try:
         exif_data = piexif.load(image_path)
         date_taken = exif_data["Exif"][piexif.ExifIFD.DateTimeOriginal].decode("utf-8")
@@ -23,6 +29,31 @@ def get_date_taken(image_path):
     except (KeyError, ValueError, piexif.InvalidImageDataError):
         date_taken = "Unknown"
     return date_taken
+
+
+def get_date_taken_mp4(mp4_file_path: str):
+    """
+    Fetch the date taken from the metadata of an MP4 file.
+    """
+    try:
+        # Use ffprobe to get metadata
+        probe = ffmpeg.probe(mp4_file_path)
+
+        # Extract date taken from format tags
+        if "format" in probe and "tags" in probe["format"]:
+            tags = probe["format"]["tags"]
+            date_taken = tags.get("creation_time") or tags.get("date")
+            if date_taken:
+                # Replace T and Z if present in the timestamp for compatibility with datetime
+                date_taken = date_taken.replace("T", " ").replace("Z", "")
+                # Remove milliseconds if present
+                date_taken = date_taken.split(".")[0]
+                return date_taken
+
+        return "Unknown"
+    except ffmpeg.Error as e:
+        print(f"An error occurred: {e.stderr.decode()}")
+        return "Unknown"
 
 
 # Get image paths and metadata
