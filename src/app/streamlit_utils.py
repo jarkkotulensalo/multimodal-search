@@ -1,6 +1,33 @@
 from datetime import datetime
 
 import streamlit as st
+from PIL import ExifTags, Image
+
+
+def correct_image_orientation(image):
+    try:
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation] == "Orientation":
+                break
+
+        exif = image._getexif()
+
+        if exif is not None:
+            orientation = exif.get(orientation, None)
+
+            if orientation == 3:
+                image = image.rotate(180, expand=True)
+            elif orientation == 6:
+                image = image.rotate(270, expand=True)
+            elif orientation == 8:
+                image = image.rotate(90, expand=True)
+
+    except (AttributeError, KeyError, IndexError):
+        # If the image doesn't have EXIF data or doesn't have an orientation tag,
+        # do nothing
+        pass
+
+    return image
 
 
 def show_image_grid(results, top_k):
@@ -27,7 +54,10 @@ def show_image_grid(results, top_k):
                     if res["fpath"].lower().endswith((".mp4", ".mov", ".avi")):
                         st.video(res["fpath"])
                     else:
-                        st.image(res["fpath"], use_column_width=True)
+                        image = Image.open(res["fpath"])
+                        # Correct the orientation
+                        corrected_image = correct_image_orientation(image)
+                        st.image(corrected_image, use_column_width=True)
 
 
 def convert_to_epoch(year: int, month: int = None):
