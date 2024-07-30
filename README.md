@@ -37,6 +37,24 @@ This project demonstrates an easy image search application using the CLIP, FAISS
     pip install -r requirements.txt
     ```
 
+4. (optional) Set-up vespa
+
+    Follow the instructions to run Vespa in Docker.
+
+    https://docs.vespa.ai/en/vespa-quick-start.html
+
+    ```sh
+    brew install vespa-cli
+
+    vespa config set target local
+
+    docker run --detach --name vespa --hostname vespa-container \
+    --publish 8080:8080 --publish 19071:19071 \
+    vespaengine/vespa
+    ```
+
+
+
 ## Configuration
 
 There are config templates ready for CLIP-ViT-L-14, CLIP-ViT-B-32, CLIP-ViT-B-32-multilingual and Jinaai/jina-clip-v1.
@@ -65,7 +83,7 @@ Currently the app is compatible with using vespa or faiss as the vector database
 
 ## Usage
 
-1 **Run Vespa**
+1. **Run Vespa**
     ```sh
 
     docker start vespa
@@ -73,19 +91,22 @@ Currently the app is compatible with using vespa or faiss as the vector database
     ```
 
 
-1. **Run the Streamlit application**:
+2. **Run the Streamlit application**:
     ```sh
     streamlit run app.py
     ```
 
     This will start a local web server and open the application in your default web browser.
 
-2. **Run the indexing script**:
+3. **Run the indexing script**:
     Select a config file from the sidebar.
 
     Press: "Create Index"
 
     This button will run a script that processes the images and videos, extracts embeddings, and creates a vector database index for efficient searching.
+
+4. **Search for images**:
+    Enter a search query and press enter
 
 
 ## License
